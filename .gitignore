@@ -3,3 +3,6 @@ input
 
 # Emacs
 *~
+
+# Lean
+/.lake
