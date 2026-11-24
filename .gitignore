@@ -9,3 +9,6 @@ input
 
 # macOS
 .DS_Store
+
+# Claude (symlink to AGENTS.md)
+CLAUDE.md
