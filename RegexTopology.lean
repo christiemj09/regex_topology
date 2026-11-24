@@ -5,4 +5,5 @@ Authors: Matt Christie
 -/
 module
 
+public import RegexTopology.Pumping
 public import RegexTopology.Singleton
