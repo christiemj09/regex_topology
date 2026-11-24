@@ -35,4 +35,13 @@ theorem not_open_sets [Nonempty α] :
   obtain ⟨L, hL⟩ := exists_not_isRegular (α := α)
   exact hL ((ht L).1 (isOpen_discrete _))
 
+/-- Over a nonempty alphabet, the regular languages are not the closed sets of any topology. -/
+theorem not_closed_sets [Nonempty α] :
+    ¬ ∃ t : TopologicalSpace (List α),
+      ∀ L : Language α, IsClosed[t] (L : Set (List α)) ↔ L.IsRegular := by
+  rintro ⟨t, ht⟩
+  refine not_open_sets ⟨t, fun L => ?_⟩
+  let := t
+  exact isClosed_compl_iff.symm.trans ((ht Lᶜ).trans Language.IsRegular_compl)
+
 end RegexTopology
