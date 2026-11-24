@@ -6,5 +6,6 @@ Authors: Matt Christie
 module
 
 public import RegexTopology.NonRegular
+public import RegexTopology.NotTopology
 public import RegexTopology.Pumping
 public import RegexTopology.Singleton
