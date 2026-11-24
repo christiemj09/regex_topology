@@ -38,4 +38,15 @@ theorem singletonDFA_acceptsFrom_none (s : List α) : (singletonDFA s).acceptsFr
   rw [DFA.mem_acceptsFrom, singletonDFA_evalFrom_none]
   simp [singletonDFA]
 
+/-- Reading the next letter of `s` advances `singletonDFA s` by one state. -/
+theorem singletonDFA_step_of_getElem?_eq {s : List α} {i : Fin (s.length + 1)} {a : α}
+    (h : s[(i : ℕ)]? = some a) :
+    (singletonDFA s).step (some i) a = some ⟨i + 1, by grind⟩ := by
+  simp [singletonDFA, h]
+
+/-- Reading any other letter sends `singletonDFA s` to the dead state. -/
+theorem singletonDFA_step_of_getElem?_ne {s : List α} {i : Fin (s.length + 1)} {a : α}
+    (h : s[(i : ℕ)]? ≠ some a) : (singletonDFA s).step (some i) a = none := by
+  simp [singletonDFA, h]
+
 end RegexTopology
