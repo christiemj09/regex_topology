@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Computability.DFA
 
+import Mathlib.Data.Fintype.Option
+
 /-!
 # Singleton languages are regular
 -/
@@ -74,5 +76,11 @@ theorem singletonDFA_acceptsFrom_some (s : List α) (i : Fin (s.length + 1)) :
 /-- `singletonDFA s` accepts exactly the word `s`. -/
 theorem singletonDFA_accepts (s : List α) : (singletonDFA s).accepts = {s} :=
   singletonDFA_acceptsFrom_some s 0
+
+omit [DecidableEq α] in
+/-- Every singleton language is regular. -/
+theorem isRegular_singleton (s : List α) : ({s} : Language α).IsRegular := by
+  classical
+  exact ⟨_, inferInstance, singletonDFA s, singletonDFA_accepts s⟩
 
 end RegexTopology
