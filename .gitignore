@@ -6,3 +6,6 @@ input
 
 # Lean
 /.lake
+
+# macOS
+.DS_Store
