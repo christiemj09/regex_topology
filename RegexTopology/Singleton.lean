@@ -26,4 +26,16 @@ def singletonDFA (s : List α) : DFA α (Option (Fin (s.length + 1))) where
   start := some 0
   accept := {some (Fin.last _)}
 
+/-- Once in the dead state, `singletonDFA s` stays there. -/
+theorem singletonDFA_evalFrom_none (s x : List α) : (singletonDFA s).evalFrom none x = none := by
+  induction x with
+  | nil => rfl
+  | cons a x ih => exact ih
+
+/-- The dead state of `singletonDFA s` accepts no words. -/
+theorem singletonDFA_acceptsFrom_none (s : List α) : (singletonDFA s).acceptsFrom none = 0 := by
+  ext x
+  rw [DFA.mem_acceptsFrom, singletonDFA_evalFrom_none]
+  simp [singletonDFA]
+
 end RegexTopology
