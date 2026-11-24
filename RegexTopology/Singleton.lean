@@ -49,4 +49,30 @@ theorem singletonDFA_step_of_getElem?_ne {s : List α} {i : Fin (s.length + 1)} 
     (h : s[(i : ℕ)]? ≠ some a) : (singletonDFA s).step (some i) a = none := by
   simp [singletonDFA, h]
 
+/-- After reading `i` letters of `s`, `singletonDFA s` accepts exactly the rest of `s`. -/
+theorem singletonDFA_acceptsFrom_some (s : List α) (i : Fin (s.length + 1)) :
+    (singletonDFA s).acceptsFrom (some i) = {s.drop i} := by
+  ext x
+  change _ ↔ x = s.drop i
+  induction x generalizing i with
+  | nil =>
+    simp [DFA.mem_acceptsFrom, singletonDFA, Fin.ext_iff, eq_comm (a := []), List.drop_eq_nil_iff]
+    omega
+  | cons a x ih =>
+    rw [DFA.mem_acceptsFrom, DFA.evalFrom_cons, ← DFA.mem_acceptsFrom]
+    by_cases h : s[(i : ℕ)]? = some a
+    · rw [singletonDFA_step_of_getElem?_eq h, ih]
+      obtain ⟨hi, rfl⟩ := List.getElem?_eq_some_iff.1 h
+      rw [List.drop_eq_getElem_cons hi, List.cons.injEq]
+      simp only [true_and]
+    · rw [singletonDFA_step_of_getElem?_ne h, singletonDFA_acceptsFrom_none]
+      simp only [Language.notMem_zero, false_iff]
+      intro hx
+      apply h
+      simpa using congrArg List.head? hx.symm
+
+/-- `singletonDFA s` accepts exactly the word `s`. -/
+theorem singletonDFA_accepts (s : List α) : (singletonDFA s).accepts = {s} :=
+  singletonDFA_acceptsFrom_some s 0
+
 end RegexTopology
