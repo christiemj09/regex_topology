@@ -50,8 +50,8 @@ Before calling a result done, check it in a scratch file that imports the module
 
 - `Language α` is a `def` equal to `Set (List α)`, not an abbreviation. `rw` will not see through it; use `exact`
   (which checks up to definitional equality) or `change`.
-- Mathlib has no simp lemma for `x ∈ ({y} : Language α) ↔ x = y`; currently worked around with `change` and
-  `simp only`.
+- Mathlib has no simp lemma for `x ∈ ({y} : Language α) ↔ x = y`; use our `mem_singleton_language`
+  (`RegexTopology/Language.lean`), which is `@[simp]`.
 - The empty language is written `0` (Mathlib treats `Language α` as a semiring), not `∅`.
 - Kleene-star notation `L∗` needs `open scoped Computability`.
 - To reason about a topology `t` held in a variable, install it with `let := t` (not `letI`; a linter prefers `let`).

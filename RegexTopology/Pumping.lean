@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Computability.DFA
 
+import RegexTopology.Language
+
 /-!
 # Length consequences of the pumping lemma
 -/
@@ -26,8 +28,7 @@ theorem exists_length_gap_of_isRegular {L : Language α} (hL : L.IsRegular) :
   obtain ⟨a, b, c, rfl, hab, hb, hpump⟩ := M.pumping_lemma hx hlen
   refine ⟨a ++ (b ++ b) ++ c, hpump ?_, ?_, ?_⟩
   · refine Language.append_mem_mul (Language.append_mem_mul rfl ?_) rfl
-    simpa using Language.join_mem_kstar (l := {b}) (L := [b, b])
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false, or_self, forall_eq]; exact rfl)
+    simpa using Language.join_mem_kstar (l := {b}) (L := [b, b]) (by simp)
   · simpa using List.length_pos_of_ne_nil hb
   · simp only [List.length_append] at hab ⊢
     omega

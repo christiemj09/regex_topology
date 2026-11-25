@@ -8,6 +8,7 @@ module
 public import Mathlib.Computability.DFA
 
 import Mathlib.Data.Fintype.Option
+import RegexTopology.Language
 
 /-!
 # Singleton languages are regular
@@ -55,7 +56,7 @@ theorem singletonDFA_step_of_getElem?_ne {s : List α} {i : Fin (s.length + 1)} 
 theorem singletonDFA_acceptsFrom_some (s : List α) (i : Fin (s.length + 1)) :
     (singletonDFA s).acceptsFrom (some i) = {s.drop i} := by
   ext x
-  change _ ↔ x = s.drop i
+  rw [mem_singleton_language]
   induction x generalizing i with
   | nil =>
     simp [DFA.mem_acceptsFrom, singletonDFA, Fin.ext_iff, eq_comm (a := []), List.drop_eq_nil_iff]

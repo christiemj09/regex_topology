@@ -5,6 +5,7 @@ Authors: Matt Christie
 -/
 module
 
+public import RegexTopology.Language
 public import RegexTopology.NonRegular
 public import RegexTopology.NotTopology
 public import RegexTopology.Pumping
