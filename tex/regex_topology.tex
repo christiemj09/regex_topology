@@ -1,0 +1,257 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% Name of the corresponding Lean declaration, set flush right on the statement's first line.
+\newcommand{\lean}[1]{\hfill{\small\normalfont\ttfamily\detokenize{#1}}\par\noindent\ignorespaces}
+
+\newcommand{\Sq}{\mathrm{SQ}}
+\newcommand{\dead}{\bot}
+\newcommand{\suffix}[2]{#1_{\geq #2}}
+
+\title{Regular Languages Do Not Form a Topology}
+\author{Matt Christie}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Over any nonempty alphabet $\Sigma$, the regular languages are neither the open sets nor the closed sets of a
+  topology on $\Sigma^*$. This document presents the proof as formalized in Lean~4 with Mathlib. Each result is
+  labeled with the name of the corresponding Lean declaration; our own declarations live in the namespace
+  \texttt{RegexTopology}, and the others are from Mathlib.
+\end{abstract}
+
+\section{Preliminaries}
+
+Let $\Sigma$ be an \emph{alphabet}: any set, not necessarily finite. A \emph{word} is a finite sequence
+$s = s_0 s_1 \cdots s_{n-1}$ of letters $s_i \in \Sigma$, with length $|s| = n$; the empty word is $\varepsilon$, and
+$\Sigma^*$ is the set of all words. For $0 \le i \le n$, write $\suffix{s}{i} = s_i \cdots s_{n-1}$ for the word
+obtained by removing the first $i$ letters of $s$, so that $\suffix{s}{0} = s$ and $\suffix{s}{n} = \varepsilon$. A
+\emph{language} is a subset of $\Sigma^*$.
+
+\begin{definition}
+  \lean{DFA}
+  A \emph{deterministic finite automaton} (DFA) $M = (Q, \delta, q_0, F)$ over $\Sigma$ consists of a set of states
+  $Q$, a transition function $\delta \colon Q \times \Sigma \to Q$, a start state $q_0 \in Q$, and a set of accept
+  states $F \subseteq Q$. Extend $\delta$ to words by $\delta^*(q, \varepsilon) = q$ and
+  $\delta^*(q, a x) = \delta^*(\delta(q, a), x)$. The language \emph{accepted from} $q$ is
+  $L_q(M) = \{ x \in \Sigma^* : \delta^*(q, x) \in F \}$, and the language \emph{accepted by} $M$ is
+  $L(M) = L_{q_0}(M)$.
+\end{definition}
+
+\begin{definition}
+  \lean{Language.IsRegular}
+  A language $L$ is \emph{regular} if $L = L(M)$ for some DFA $M$ with finitely many states.
+\end{definition}
+
+We use two standard facts about regular languages.
+
+\begin{lemma}[Complement]\label{lem:compl}
+  \lean{Language.IsRegular_compl}
+  $\Sigma^* \setminus L$ is regular if and only if $L$ is regular.
+\end{lemma}
+
+\begin{proof}
+  If $M$ accepts $L$, the DFA with the same states and transitions but accept states $Q \setminus F$ accepts
+  $\Sigma^* \setminus L$, and conversely.
+\end{proof}
+
+\begin{lemma}[Pumping lemma]\label{lem:pumping}
+  \lean{DFA.pumping_lemma}
+  Let $M$ be a DFA with $p$ states. If $x \in L(M)$ and $|x| \ge p$, then $x = abc$ for words $a, b, c$ with
+  $|a| + |b| \le p$ and $b \neq \varepsilon$, such that $a b^k c \in L(M)$ for every $k \ge 0$.
+\end{lemma}
+
+\begin{proof}
+  Reading the first $p$ letters of $x$ visits $p + 1$ states, so by the pigeonhole principle some state is visited
+  twice. Take $b$ to be the input read between the two visits; it returns $M$ to the same state, so it can be
+  repeated any number of times.
+\end{proof}
+
+\section{Singleton languages are regular}
+
+Fix a word $s = s_0 \cdots s_{n-1}$. We construct a DFA that tracks how much of $s$ has been read so far.
+
+\begin{definition}
+  \lean{singletonDFA}
+  Let $D_s$ be the DFA with states $Q = \{q_0, \ldots, q_n\} \cup \{\dead\}$, start state $q_0$, accept states
+  $F = \{q_n\}$, and transitions
+  \[
+    \delta(q_i, a) =
+    \begin{cases}
+      q_{i+1} & \text{if } i < n \text{ and } s_i = a, \\
+      \dead   & \text{otherwise,}
+    \end{cases}
+    \qquad
+    \delta(\dead, a) = \dead.
+  \]
+  The state $q_i$ records that the first $i$ letters of $s$ have been read; $\dead$ is a \emph{dead state}.
+\end{definition}
+
+\begin{lemma}\label{lem:dead-absorbing}
+  \lean{singletonDFA_evalFrom_none}
+  For every word $x$, $\delta^*(\dead, x) = \dead$.
+\end{lemma}
+
+\begin{proof}
+  By induction on $x$. For $x = \varepsilon$ this is the definition of $\delta^*$. For $x = a x'$,
+  $\delta^*(\dead, a x') = \delta^*(\delta(\dead, a), x') = \delta^*(\dead, x') = \dead$ by the induction hypothesis.
+\end{proof}
+
+\begin{lemma}\label{lem:dead-empty}
+  \lean{singletonDFA_acceptsFrom_none}
+  $L_\dead(D_s) = \emptyset$.
+\end{lemma}
+
+\begin{proof}
+  By Lemma~\ref{lem:dead-absorbing}, $\delta^*(\dead, x) = \dead \notin F$ for every word $x$.
+\end{proof}
+
+The next lemma is the key invariant: from each state $q_i$, the DFA accepts exactly the part of $s$ that remains to
+be read. Proving it for every $q_i$ at once is what allows the induction to go through, since reading a letter moves
+the DFA from $q_i$ to a different state.
+
+\begin{lemma}\label{lem:invariant}
+  \lean{singletonDFA_acceptsFrom_some}
+  For $0 \le i \le n$, $L_{q_i}(D_s) = \{ \suffix{s}{i} \}$.
+\end{lemma}
+
+\begin{proof}
+  We show that for every word $x$ and every $i$, $\delta^*(q_i, x) = q_n$ if and only if $x = \suffix{s}{i}$, by
+  induction on $x$, for all $i$ simultaneously.
+
+  If $x = \varepsilon$, then $\delta^*(q_i, \varepsilon) = q_i$, which equals $q_n$ if and only if $i = n$, that is,
+  if and only if $\suffix{s}{i} = \varepsilon$.
+
+  If $x = a x'$, then $\delta^*(q_i, a x') = \delta^*(\delta(q_i, a), x')$, so $x \in L_{q_i}(D_s)$ if and only if
+  $x' \in L_{\delta(q_i, a)}(D_s)$. There are two cases.
+  \begin{itemize}
+    \item If $i < n$ and $s_i = a$, then $\delta(q_i, a) = q_{i+1}$ (\texttt{singletonDFA\_step\_of\_getElem?\_eq}).
+      By the induction hypothesis at $q_{i+1}$, $x' \in L_{q_{i+1}}(D_s)$ if and only if $x' = \suffix{s}{i+1}$.
+      Since $\suffix{s}{i} = s_i \, \suffix{s}{i+1} = a \, \suffix{s}{i+1}$, this holds if and only if
+      $a x' = \suffix{s}{i}$.
+    \item Otherwise, $\delta(q_i, a) = \dead$ (\texttt{singletonDFA\_step\_of\_getElem?\_ne}), and
+      $x' \notin L_\dead(D_s) = \emptyset$ by Lemma~\ref{lem:dead-empty}. Correspondingly, $a x' \neq \suffix{s}{i}$: if they were equal, then
+      $\suffix{s}{i}$ would be nonempty with first letter $s_i = a$, so $i < n$ and $s_i = a$, contrary to
+      assumption. \qedhere
+  \end{itemize}
+\end{proof}
+
+\begin{corollary}\label{cor:singleton-accepts}
+  \lean{singletonDFA_accepts}
+  $L(D_s) = \{ s \}$.
+\end{corollary}
+
+\begin{proof}
+  Take $i = 0$ in Lemma~\ref{lem:invariant}: $L(D_s) = L_{q_0}(D_s) = \{ \suffix{s}{0} \} = \{ s \}$.
+\end{proof}
+
+\begin{theorem}\label{thm:singleton}
+  \lean{isRegular_singleton}
+  For every word $s$, the language $\{ s \}$ is regular.
+\end{theorem}
+
+\begin{proof}
+  $D_s$ has $n + 2$ states and accepts $\{ s \}$ by Corollary~\ref{cor:singleton-accepts}.
+\end{proof}
+
+\section{A non-regular language}
+
+The pumping lemma implies that the lengths of words in a regular language cannot have arbitrarily large gaps.
+
+\begin{lemma}\label{lem:gap}
+  \lean{exists_length_gap_of_isRegular}
+  If $L$ is regular, there is a $p$ such that for every $x \in L$ with $|x| \ge p$, there is a $y \in L$ with
+  $|x| < |y| \le |x| + p$.
+\end{lemma}
+
+\begin{proof}
+  Let $M$ be a DFA with $p$ states accepting $L$. Given $x \in L$ with $|x| \ge p$, the pumping lemma (Lemma~\ref{lem:pumping}) gives
+  $x = abc$ with $|a| + |b| \le p$, $b \neq \varepsilon$, and $y = abbc \in L$. Then $|y| = |x| + |b|$, and
+  $1 \le |b| \le p$.
+\end{proof}
+
+\begin{definition}
+  \lean{squareLengths}
+  Let $\Sq = \{ w \in \Sigma^* : |w| = r^2 \text{ for some } r \in \mathbb{N} \}$ be the language of words whose length
+  is a perfect square.
+\end{definition}
+
+\begin{theorem}\label{thm:squares}
+  \lean{not_isRegular_squareLengths}
+  If $\Sigma$ is nonempty, then $\Sq$ is not regular.
+\end{theorem}
+
+\begin{proof}
+  Suppose $\Sq$ is regular, and let $p$ be as in Lemma~\ref{lem:gap}. Since $\Sigma$ is nonempty, we may choose a
+  letter $c \in \Sigma$. The word $x = c^{p^2}$ is in $\Sq$, and $|x| = p^2 \ge p$, so there is a $y \in \Sq$ with
+  \[
+    p^2 < |y| \le p^2 + p < (p + 1)^2.
+  \]
+  But no perfect square lies strictly between $p^2$ and $(p+1)^2$ (\texttt{Nat.not\_exists\_sq}), so $y \notin \Sq$,
+  a contradiction.
+\end{proof}
+
+\begin{corollary}\label{cor:nonregular}
+  \lean{exists_not_isRegular}
+  If $\Sigma$ is nonempty, then some language over $\Sigma$ is not regular.
+\end{corollary}
+
+\begin{proof}
+  By Theorem~\ref{thm:squares}, $\Sq$ is such a language.
+\end{proof}
+
+\section{Regular languages do not form a topology}
+
+Recall that a \emph{topology} on a set $X$ is a collection $\tau$ of subsets of $X$, the \emph{open} sets, that
+contains $\emptyset$ and $X$ and is closed under finite intersections and arbitrary unions. A set is \emph{closed} if
+its complement is open.
+
+\begin{theorem}\label{thm:open}
+  \lean{not_open_sets}
+  If $\Sigma$ is nonempty, there is no topology on $\Sigma^*$ whose open sets are exactly the regular languages.
+\end{theorem}
+
+\begin{proof}
+  Suppose $\tau$ is such a topology. Every singleton $\{ s \}$ is regular (Theorem~\ref{thm:singleton}), hence open. Every language
+  $L = \bigcup_{s \in L} \{ s \}$ is then a union of open sets, hence open, so $\tau$ is the discrete topology
+  (\texttt{discreteTopology\_iff\_isOpen\_singleton}). In particular, every language is regular, contradicting
+  Corollary~\ref{cor:nonregular}.
+\end{proof}
+
+\begin{theorem}
+  \lean{not_closed_sets}
+  If $\Sigma$ is nonempty, there is no topology on $\Sigma^*$ whose closed sets are exactly the regular languages.
+\end{theorem}
+
+\begin{proof}
+  Suppose $\tau$ is such a topology. For every language $L$,
+  \[
+    L \text{ open}
+    \iff \Sigma^* \setminus L \text{ closed}
+    \iff \Sigma^* \setminus L \text{ regular}
+    \iff L \text{ regular},
+  \]
+  using Lemma~\ref{lem:compl} for the last step. So the open sets of $\tau$ are exactly the regular languages,
+  contradicting Theorem~\ref{thm:open}.
+\end{proof}
+
+\begin{remark}
+  The hypothesis that $\Sigma$ is nonempty is necessary. If $\Sigma = \emptyset$, then $\Sigma^* = \{ \varepsilon \}$,
+  both of its subsets are regular, and they form a topology. On the other hand, $\Sigma$ need not be finite.
+\end{remark}
+
+\end{document}

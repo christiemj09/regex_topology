@@ -23,6 +23,9 @@ to the open-set case.
 The alphabet must be nonempty: if Σ = ∅, then Σ* = {ε}, every language is regular, and the regular languages form
 a topology. The alphabet need not be finite.
 
+A written proof that follows the formalization, citing the corresponding Lean declaration for each result, is in
+[`tex/regex_topology.tex`](tex/regex_topology.tex).
+
 ## Building
 
 With [elan](https://github.com/leanprover/elan) installed:
@@ -30,6 +33,12 @@ With [elan](https://github.com/leanprover/elan) installed:
 ```sh
 lake exe cache get  # download prebuilt Mathlib
 lake build
+```
+
+To build the proof document with [Tectonic](https://tectonic-typesetting.github.io/):
+
+```sh
+tectonic tex/regex_topology.tex  # writes tex/regex_topology.pdf
 ```
 
 ## AI Disclaimer

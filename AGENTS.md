@@ -59,5 +59,6 @@ Before calling a result done, check it in a scratch file that imports the module
 ## Documents
 
 - `README.md`: the entry point and table of contents for results. Keep it in sync when results are added or renamed.
-- `tex/` (planned): a plain-LaTeX proof document that follows the formalization, citing Lean declaration names.
-  Build with `tectonic`.
+- `tex/regex_topology.tex`: a plain-LaTeX proof document that follows the formalization. Each statement is tagged
+  with its Lean declaration via `\lean{...}`; keep it in sync when results are added or renamed. Build with
+  `tectonic tex/regex_topology.tex`, and view the PDF to check layout, not just that it compiles.

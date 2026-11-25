@@ -7,6 +7,9 @@ input
 # Lean
 /.lake
 
+# LaTeX
+/tex/*.pdf
+
 # macOS
 .DS_Store
 
